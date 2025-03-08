@@ -15,7 +15,4 @@ export class AgendamientoRoutes {
 
         return router;
     }
-
-
-
 }
