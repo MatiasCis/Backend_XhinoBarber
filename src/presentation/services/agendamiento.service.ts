@@ -1,5 +1,5 @@
 import { ClientModel } from "../../data/mongo";
-import { ClientDto, CustomError } from "../../domain";
+import { ClientDto, CustomError, UserEntity } from "../../domain";
 
 
 
@@ -11,26 +11,16 @@ export class AgendamientoService {
 
         if (dateExists) throw CustomError.badRequest('La fecha ya está ocupada');
 
-
         try {
             const client = new ClientModel(clientDto);
+            const clientEntity = UserEntity.fromObject(client);
+            
             client.save();
 
-            
-
-
-
-            return client;
-
-
-
+            return clientEntity;
         }
         catch (error) {
             throw CustomError.internalServer(`Error al agendar la cita: ${error}`);
-            
         }
-
-
     }
-
 }

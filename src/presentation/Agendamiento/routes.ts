@@ -11,9 +11,7 @@ export class AgendamientoRoutes {
         const agendamientoService = new AgendamientoService();
         const controller = new AgendamientoController(agendamientoService);
         
-
         router.post('/agendamiento', controller.agendar);
-
 
         return router;
     }
