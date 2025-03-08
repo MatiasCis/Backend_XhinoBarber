@@ -15,7 +15,7 @@ const clientSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'El telefono es requerido'],
     },
-    mail: {
+    email: {
         type: String,
         required: [true, 'El correo es requerido'],
     },
