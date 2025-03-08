@@ -11,7 +11,26 @@ export class AgendamientoService {
 
         if (dateExists) throw CustomError.badRequest('La fecha ya está ocupada');
 
-        return 'todo ok!';
+
+        try {
+            const client = new ClientModel(clientDto);
+            client.save();
+
+            
+
+
+
+            return client;
+
+
+
+        }
+        catch (error) {
+            throw CustomError.internalServer(`Error al agendar la cita: ${error}`);
+            
+        }
+
+
     }
 
 }
