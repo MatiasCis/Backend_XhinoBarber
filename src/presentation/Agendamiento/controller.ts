@@ -8,11 +8,14 @@ export class AgendamientoController {
 
 constructor (public readonly agendamientoService: AgendamientoService){}
 
- agendar = (req: Request, res: Response) => {
+ agendar = (req: Request, res: Response): void => {
 
     const [error, clientDTO] = ClientDto.create(req.body);
 
-    if (error) return res.status(400).json({error});
+    if (error) {
+         res.status(400).json({error});
+         return;
+    }
 
     
     this.agendamientoService.agendar(clientDTO!)
@@ -21,7 +24,3 @@ constructor (public readonly agendamientoService: AgendamientoService){}
 
 
 }
-
-
-
-
