@@ -1,3 +1,4 @@
+import { JwtAdapter } from "../../config/plugins";
 import { envs } from "../../config/plugins/envs";
 import { ClientModel } from "../../data/mongo";
 import { ClientDto, CustomError, UserEntity } from "../../domain";
@@ -19,11 +20,17 @@ export class AgendamientoService {
         try {
             const client = new ClientModel(clientDto);
             const clientEntity = UserEntity.fromObject(client);
+
+            const token = await JwtAdapter.generateToken({id: clientEntity._id, state: clientEntity.stateCita});
+            if (!token) throw CustomError.internalServer('Error al generar el token');
+            
+
+
             // Guardar el cliente en la base de datos
             await client.save();
             await this.sendEmailConfirmationDate(clientDto.email);
 
-            return clientEntity;
+            return {clientEntity, token};
         }
         catch (error) {
             throw CustomError.internalServer(`Error al agendar la cita: ${error}`);
@@ -60,14 +67,6 @@ export class AgendamientoService {
         </div>
         `;
         
-        
-        
-        
-
-        
-        
-        
-
         const options = {
             to: email,
             subject: 'Confirmación de cita',
