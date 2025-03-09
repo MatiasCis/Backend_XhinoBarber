@@ -18,6 +18,7 @@ export class AgendamientoRoutes {
         const controller = new AgendamientoController(agendamientoService);
         
         router.post('/agendamiento', controller.agendar);
+        router.get('/confirm-state/:token', controller.confirmState);
 
         return router;
     }

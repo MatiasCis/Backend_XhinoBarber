@@ -43,7 +43,7 @@ export class AgendamientoService {
         const token = await JwtAdapter.generateToken({email});
         if (!token) throw CustomError.internalServer(`Error al generar el token`);
         
-        const link =  `${envs.WEBSERVICE_URL}/agendamiento${token}`;
+        const link =  `${envs.WEBSERVICE_URL}/confirm-state/${token}`;
 
         const html = `
         <div style="font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; padding: 20px;">
