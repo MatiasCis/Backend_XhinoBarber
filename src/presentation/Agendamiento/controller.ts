@@ -36,10 +36,10 @@ export class AgendamientoController {
 
    confirmState = (req: Request, res: Response): void => {
       const {token} = req.params;
-      res.json (token);
-      //this.agendamientoService.confirmState(token)
-      //.then(()=>res.json(`Cita confirmada`))
-      //.catch((error) => this.handlerError(error, res));
+
+      this.agendamientoService.confirmState(token)
+      .then(()=>res.json(`Cita confirmada`))
+      .catch((error) => this.handlerError(error, res));
 
    }
 

@@ -7,11 +7,11 @@ import { EmailService } from './email.service';
 
 
 export class AgendamientoService {
-    constructor (
+    constructor(
         private readonly emailService: EmailService,
-    ){}
+    ) { }
 
-    public async agendar( clientDto: ClientDto ) {
+    public async agendar(clientDto: ClientDto) {
         // Validar que la fecha no esté ocupada
         const dateExists = await ClientModel.findOne({ dateCita: clientDto.dateCita });
         // Si la fecha ya está ocupada, lanzar un error
@@ -21,16 +21,16 @@ export class AgendamientoService {
             const client = new ClientModel(clientDto);
             const clientEntity = UserEntity.fromObject(client);
 
-            const token = await JwtAdapter.generateToken({id: clientEntity._id, state: clientEntity.stateCita});
+            const token = await JwtAdapter.generateToken({ id: clientEntity._id, state: clientEntity.stateCita });
             if (!token) throw CustomError.internalServer('Error al generar el token');
-            
+
 
 
             // Guardar el cliente en la base de datos
             await client.save();
             await this.sendEmailConfirmationDate(clientDto.email);
 
-            return {clientEntity, token};
+            return { clientEntity, token };
         }
         catch (error) {
             throw CustomError.internalServer(`Error al agendar la cita: ${error}`);
@@ -40,10 +40,10 @@ export class AgendamientoService {
 
     private sendEmailConfirmationDate = async (email: string) => {
 
-        const token = await JwtAdapter.generateToken({email});
+        const token = await JwtAdapter.generateToken({ email });
         if (!token) throw CustomError.internalServer(`Error al generar el token`);
-        
-        const link =  `${envs.WEBSERVICE_URL}/confirm-state/${token}`;
+
+        const link = `${envs.WEBSERVICE_URL}/confirm-state/${token}`;
 
         const html = `
         <div style="font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; padding: 20px;">
@@ -69,7 +69,7 @@ export class AgendamientoService {
             </div>
         </div>
         `;
-        
+
         const options = {
             to: email,
             subject: 'Confirmación de cita',
@@ -79,6 +79,28 @@ export class AgendamientoService {
         const isSet = await this.emailService.sendEmail(options);
         if (!isSet) throw CustomError.internalServer('Error al enviar el correo de confirmación');
 
+    }
+
+
+
+    public confirmState = async (token: string) => {
+
+        const payload = await JwtAdapter.validateToken(token);
+        if (!payload) throw CustomError.badRequest('Token invalido');
+
+        const { state } = payload as { state: string };
+
+        const client = await ClientModel.findOne({ state });
+
+        if (!client) throw CustomError.notFound('Cita no encontrada');
+
+        if (client.stateCita === 'Pendiente') {
+            client.stateCita = 'Correo confirmado'
+            await client.save(); // Guardar el cambio en la base de datos
+            return { message: 'Cita confirmada exitosamente' };
+        } else {
+            throw CustomError.badRequest('La cita ya está confirmada o tiene otro estado');
+        }
     }
 
 }
