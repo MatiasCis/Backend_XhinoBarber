@@ -1,12 +1,12 @@
 import path from 'path';
 import express, { Router } from 'express';
+import { corsConfig } from '../config/cors';
 
 interface Options {
   port: number;
   routes: Router;
   public_path?: string;
 }
-
 
 export class Server {
 
@@ -23,31 +23,29 @@ export class Server {
     this.routes = routes;
   }
 
-  
-  
   async start() {
 
     //* Middlewares
-    this.app.use( express.json() ); // raw
-    this.app.use( express.urlencoded({ extended: true }) ); // x-www-form-urlencoded
+    this.app.use(corsConfig); // Aplica la configuración de CORS
+    this.app.use(express.json()); // raw
+    this.app.use(express.urlencoded({ extended: true })); // x-www-form-urlencoded
 
     //* Public Folder
-    this.app.use( express.static( this.publicPath ) );
+    this.app.use(express.static(this.publicPath));
 
     //* Routes
-    this.app.use( this.routes );
+    this.app.use(this.routes);
 
-    //* SPA /^\/(?!api).*/  <== Únicamente si no empieza con la palabra api
+    //* SPA (Single Page Application) - Para manejar cualquier ruta que no sea API
     this.app.get('*', (req, res) => {
-      const indexPath = path.join( __dirname + `../../../${ this.publicPath }/index.html` );
+      const indexPath = path.join(__dirname + `../../../${this.publicPath}/index.html`);
       res.sendFile(indexPath);
     });
-    
 
+    // Inicia el servidor
     this.serverListener = this.app.listen(this.port, () => {
-      console.log(`Server running on port ${ this.port }`);
+      console.log(`Server running on port ${this.port}`);
     });
-
   }
 
   public close() {

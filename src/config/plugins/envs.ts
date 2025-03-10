@@ -17,4 +17,5 @@ export const envs = {
 
     WEBSERVICE_URL : env.get('WEBSERVICE_URL').required().asString(),
 
+    CLIENT_URL: env.get('CLIENT_URL').required().asString(),
 }
