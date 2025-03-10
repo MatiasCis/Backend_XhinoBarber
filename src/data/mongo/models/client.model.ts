@@ -25,7 +25,7 @@ const clientSchema = new mongoose.Schema({
     },
     stateCita: {
         type: String,
-        enum: ['Pendiente', 'Correo confirmado', 'Asistio', 'Cancelado'],
+        enum: ['Pendiente', 'Confirmado', 'Cancelado'],
         default: 'Pendiente'
     }
 

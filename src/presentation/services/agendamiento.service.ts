@@ -75,12 +75,10 @@ export class AgendamientoService {
             subject: 'Confirmación de cita',
             htmlBody: html,
         }
-
         const isSet = await this.emailService.sendEmail(options);
         if (!isSet) throw CustomError.internalServer('Error al enviar el correo de confirmación');
 
     }
-
 
 
     public confirmState = async (token: string) => {
@@ -95,7 +93,7 @@ export class AgendamientoService {
         if (!client) throw CustomError.notFound('Cita no encontrada');
 
         if (client.stateCita === 'Pendiente') {
-            client.stateCita = 'Correo confirmado'
+            client.stateCita = 'Confirmado'
             await client.save(); // Guardar el cambio en la base de datos
             return { message: 'Cita confirmada exitosamente' };
         } else {
