@@ -47,31 +47,41 @@ export class AgendamientoService {
         if (!token) throw CustomError.internalServer(`Error al generar el token`);
 
         const link = `${envs.WEBSERVICE_URL}/confirm-state/${token}`;
+        const linkCancelar = `${envs.WEBSERVICE_URL}/cancelar-cita/${token}`;  // Link para cancelar la cita
+
 
         const html = `
-        <div style="font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; padding: 20px;">
+        <div style="font-family: Arial, sans-serif; text-align: left; background-color: #f4f4f4; padding: 20px;">
             <div style="background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 100%; max-width: 600px; margin: 0 auto;">
-                <h1 style="color: #2a2a2a; font-size: 36px;">¡Tu cita ha sido agendada!</h1>
-                <p style="color: #555; font-size: 18px; line-height: 1.5;">¡Gracias por elegir a <strong>XhinoBarber</strong>! para tu corte de cabello.</p>
+                <h1 style="color: #2a2a2a; font-size: 36px; margin-bottom: 10px;">¡Tu cita ha sido agendada!</h1>
+                <p style="color: #555; font-size: 18px; line-height: 1.5;">¡Gracias por elegir a <strong>XhinoBarber</strong> para tu corte de cabello! Tu cita ha sido agendada, pero está <span style="color: #ff9900; font-weight: bold;">pendiente</span> hasta que confirmes tu asistencia.</p>
                 <p style="color: #555; font-size: 16px;">Para confirmar tu asistencia, por favor haz clic en el siguiente enlace:</p>
-                <a href="${link}" style="display: inline-block; padding: 12px 24px; background-color: #ff6600; color: #fff; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 5px; margin-top: 20px;">Confirmar mi cita</a>
-                <p style="color: #777; font-size: 14px; margin-top: 30px;">Si no puedes asistir, por favor ignora este correo.</p>
-        
+                <a href="${link}" style="display: inline-block; padding: 12px 24px; background-color: rgb(71, 148, 29); color: #fff; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 5px;">Confirmar mi cita</a>
+                
                 <p style="color: #555; font-size: 14px; margin-top: 20px;">Puedes contactarme a través de los siguientes medios:</p>
-                    <a href="https://www.instagram.com/xhin9._/" style="text-decoration: none;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/800px-Instagram_icon.png" alt="Instagram" style="width: 40px; height: 40px; filter: grayscale(100%) invert(35%) brightness(0) sepia(100%) contrast(100%);">
-                    </a>
-                    <a href="https://wa.me/56949524205" style="text-decoration: none;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/1200px-WhatsApp.svg.png" alt="WhatsApp" style="width: 40px; height: 40px; filter: grayscale(100%) invert(35%) brightness(0) sepia(100%) contrast(100%);">
-                    </a>
+                <a href="https://www.instagram.com/xhin9._/" style="text-decoration: none; margin-right: 10px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/800px-Instagram_icon.png" alt="Instagram" style="width: 40px; height: 40px;">
+                </a>
+                <a href="https://wa.me/56949524205" style="text-decoration: none;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/1200px-WhatsApp.svg.png" alt="WhatsApp" style="width: 40px; height: 40px;">
+                </a>
+                
                 <p style="color: #555; font-size: 14px; margin-top: 20px;">O si prefieres, puedes llamarnos al número: <strong>+56 9 4952 4205</strong></p>
                 
+                <p style="color: #ff4d4d; font-size: 14px; margin-top: 20px; font-weight: bold;">
+                    *IMPORTANTE: Si confirmas tu asistencia y no asistes sin cancelar previamente, se aplicará una penalización.
+                </p>
+    
                 <footer style="color: #aaa; font-size: 12px; margin-top: 40px;">
                     <p>&copy; 2025 XhinoBarber. Todos los derechos reservados.</p>
                 </footer>
             </div>
         </div>
-        `;
+    `;
+    
+    
+    
+    
 
         const options = {
             to: email,
@@ -85,20 +95,20 @@ export class AgendamientoService {
 
     public async obtenerEventos() {
         try {
-            const eventos = await ClientModel.find(); 
-    
+            const eventos = await ClientModel.find();
+
             const eventosFormateados = eventos.map(evento => {
                 if (!evento.name || !evento.dateCita || !evento.stateCita) {
                     throw new Error("Datos incompletos en el evento");
                 }
-    
+
                 return {
-                    title: `Cita con ${evento.name}`, 
-                    start: evento.dateCita.toISOString(), 
+                    title: `Cita con ${evento.name}`,
+                    start: evento.dateCita.toISOString(),
                     stateCita: evento.stateCita,
                 };
             });
-    
+
             return eventosFormateados;
         } catch (error) {
             throw CustomError.internalServer(`Error al obtener los eventos: ${error}`);
@@ -120,10 +130,81 @@ export class AgendamientoService {
         if (client.stateCita === 'Pendiente') {
             client.stateCita = 'Confirmado'
             await client.save();
+            await this.sendEmailConfirmedAppointment(client.email, client.dateCita, client.name);
             return { message: 'Cita confirmada exitosamente' };
         } else {
             throw CustomError.badRequest('La cita ya está confirmada o tiene otro estado');
         }
     }
+
+
+    public async cancelarCita(token: string) {
+        const payload = await JwtAdapter.validateToken(token);
+        if (!payload) throw CustomError.badRequest('Token invalido');
+
+        const { state } = payload as { state: string };
+
+        const client = await ClientModel.findOne({ state });
+
+        if (!client) throw CustomError.notFound('Cita no encontrada');
+
+        if (client.stateCita === 'Pendiente' || client.stateCita === 'Confirmado') {
+            client.stateCita = 'Cancelado';
+            await client.save();
+            return { message: 'Cita cancelada exitosamente' };
+        } else {
+            throw CustomError.badRequest('La cita ya está cancelada o en un estado que no se puede cancelar');
+        }
+    }
+
+
+    private sendEmailConfirmedAppointment = async (email: string, date: Date, name: string) => {
+        const token = await JwtAdapter.generateToken({ email });
+        if (!token) throw CustomError.internalServer(`Error al generar el token`);
+    
+        const linkCancelar = `${envs.WEBSERVICE_URL}/cancelar-cita/${token}`;
+    
+        const formattedDate = moment(date)
+        .locale('es')  // Establecer el idioma a español
+        .tz("America/Santiago")
+        .format("DD [de] MMMM [del] YYYY hh:mm A");
+        
+        const html = `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: center;">
+            <div style="background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 100%; max-width: 600px; margin: 0 auto; text-align: left;">
+                <h1 style="color: #2a2a2a; font-size: 28px;">Hola ${name},</h1>
+                <p style="color: #555; font-size: 18px;">Gracias por preferirnos. Tu cita ha sido agendada.</p>
+    
+                <hr style="border: 1px solid #ddd; margin: 20px 0;">
+    
+                <p style="color: #333; font-size: 18px;"><strong>📍 Lugar:</strong> Covadonga 433, Lo Prado</p>
+                <p style="color: #333; font-size: 18px;"><strong>💈 Barbero:</strong> Jose Moya</p>
+                <p style="color: #333; font-size: 18px;"><strong>🗓 Fecha:</strong> ${formattedDate}</p>
+    
+                <hr style="border: 1px solid #ddd; margin: 20px 0;">
+    
+                <p style="color: #555; font-size: 16px;">Si deseas cancelar tu cita, puedes hacerlo aquí:</p>
+                <a href="${linkCancelar}" style="display: inline-block; padding: 12px 24px; background-color: #ff3333; color: #fff; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 5px;">Cancelar mi cita</a>
+    
+                <footer style="color: #aaa; font-size: 12px; margin-top: 40px; text-align: center;">
+                    <p>&copy; 2025 XhinoBarber. Todos los derechos reservados.</p>
+                </footer>
+            </div>
+        </div>`;
+    
+        const options = {
+            to: email,
+            subject: 'Tu cita ha sido confirmada',
+            htmlBody: html,
+        };
+    
+        const isSet = await this.emailService.sendEmail(options);
+        if (!isSet) throw CustomError.internalServer('Error al enviar el correo de confirmación de cita');
+    };
+    
+    
+    
+
+
 
 }

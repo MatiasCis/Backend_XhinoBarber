@@ -20,6 +20,8 @@ export class AgendamientoRoutes {
         router.post('/agendamiento', controller.agendar);
         router.get('/agendamiento', controller.getEventos);
         router.get('/confirm-state/:token', controller.confirmState);
+        router.get('/cancelar-cita/:token', controller.cancelarCita);
+
 
         return router;
     }

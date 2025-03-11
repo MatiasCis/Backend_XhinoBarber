@@ -50,5 +50,13 @@ export class AgendamientoController {
 
    }
 
+   cancelarCita = (req: Request, res: Response): void => {
+      const { token } = req.params;
+
+      this.agendamientoService.cancelarCita(token)
+         .then((response) => res.json(response))
+         .catch((error) => this.handlerError(error, res));
+   }
+
 
 }
