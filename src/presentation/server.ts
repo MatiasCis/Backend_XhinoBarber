@@ -26,7 +26,7 @@ export class Server {
   async start() {
 
     //* Middlewares
-    this.app.use(corsConfig); // Aplica la configuración de CORS
+    this.app.use(corsConfig); 
     this.app.use(express.json()); // raw
     this.app.use(express.urlencoded({ extended: true })); // x-www-form-urlencoded
 
@@ -35,12 +35,6 @@ export class Server {
 
     //* Routes
     this.app.use(this.routes);
-
-    //* SPA (Single Page Application) - Para manejar cualquier ruta que no sea API
-    this.app.get('*', (req, res) => {
-      const indexPath = path.join(__dirname + `../../../${this.publicPath}/index.html`);
-      res.sendFile(indexPath);
-    });
 
     // Inicia el servidor
     this.serverListener = this.app.listen(this.port, () => {

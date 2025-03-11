@@ -3,6 +3,7 @@ import { envs } from "../../config/plugins/envs";
 import { ClientModel } from "../../data/mongo";
 import { ClientDto, CustomError, UserEntity } from "../../domain";
 import { EmailService } from './email.service';
+import moment from "moment-timezone";
 
 
 
@@ -12,12 +13,14 @@ export class AgendamientoService {
     ) { }
 
     public async agendar(clientDto: ClientDto) {
-        // Validar que la fecha no esté ocupada
         const dateExists = await ClientModel.findOne({ dateCita: clientDto.dateCita });
-        // Si la fecha ya está ocupada, lanzar un error
         if (dateExists) throw CustomError.badRequest('La fecha ya está ocupada');
 
         try {
+            const fechaCitaUTC = moment(clientDto.dateCita).tz("UTC", true).toDate();
+
+            clientDto.dateCita = fechaCitaUTC;
+
             const client = new ClientModel(clientDto);
             const clientEntity = UserEntity.fromObject(client);
 
@@ -26,8 +29,8 @@ export class AgendamientoService {
 
 
 
-            // Guardar el cliente en la base de datos
             await client.save();
+            await ClientModel.updateOne({ dateCita: clientDto.dateCita }, { $set: { stateCita: 'Pendiente' } });
             await this.sendEmailConfirmationDate(clientDto.email);
 
             return { clientEntity, token };
@@ -80,6 +83,28 @@ export class AgendamientoService {
 
     }
 
+    public async obtenerEventos() {
+        try {
+            const eventos = await ClientModel.find(); 
+    
+            const eventosFormateados = eventos.map(evento => {
+                if (!evento.name || !evento.dateCita || !evento.stateCita) {
+                    throw new Error("Datos incompletos en el evento");
+                }
+    
+                return {
+                    title: `Cita con ${evento.name}`, 
+                    start: evento.dateCita.toISOString(), 
+                    stateCita: evento.stateCita,
+                };
+            });
+    
+            return eventosFormateados;
+        } catch (error) {
+            throw CustomError.internalServer(`Error al obtener los eventos: ${error}`);
+        }
+    }
+
 
     public confirmState = async (token: string) => {
 
@@ -94,7 +119,7 @@ export class AgendamientoService {
 
         if (client.stateCita === 'Pendiente') {
             client.stateCita = 'Confirmado'
-            await client.save(); // Guardar el cambio en la base de datos
+            await client.save();
             return { message: 'Cita confirmada exitosamente' };
         } else {
             throw CustomError.badRequest('La cita ya está confirmada o tiene otro estado');
