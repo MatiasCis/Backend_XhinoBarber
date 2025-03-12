@@ -7,4 +7,5 @@ export const corsConfig = cors({
   origin: envs.CLIENT_URL, // Origen permitido (puedes usar una variable de entorno)
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Métodos permitidos
   credentials: true, // Si necesitas enviar cookies o autenticación
+  allowedHeaders: ['Content-Type'],  // Encabezados permitidos
 });
