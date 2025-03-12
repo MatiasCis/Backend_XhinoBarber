@@ -57,6 +57,4 @@ export class AgendamientoController {
          .then((response) => res.json(response))
          .catch((error) => this.handlerError(error, res));
    }
-
-
 }

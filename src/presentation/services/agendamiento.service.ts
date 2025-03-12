@@ -49,9 +49,9 @@ export class AgendamientoService {
         const link = `${envs.WEBSERVICE_URL}/confirm-state/${token}`;
 
         const formattedDate = moment(date)
-        .locale('es')  // Establecer el idioma a español
-        .tz("America/Santiago")
-        .format("DD [de] MMMM [del] YYYY hh:mm A");
+            .locale('es')  // Establecer el idioma a español
+            .tz("America/Santiago")
+            .format("DD [de] MMMM [del] YYYY hh:mm A");
 
         const html = `
         <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: center;">
@@ -79,11 +79,6 @@ export class AgendamientoService {
                 </footer>
             </div>
         </div>`;
-    
-    
-    
-    
-    
 
         const options = {
             to: email,
@@ -163,15 +158,15 @@ export class AgendamientoService {
     private sendEmailConfirmedAppointment = async (email: string, date: Date, name: string) => {
         const token = await JwtAdapter.generateToken({ email });
         if (!token) throw CustomError.internalServer(`Error al generar el token`);
-    
-        const linkCancelar = `${envs.WEBSERVICE_URL}/cancelar-cita/${token}`;
-    
-        const formattedDate = moment(date)
-        .locale('es')  // Establecer el idioma a español
-        .tz("America/Santiago")
-        .format("DD [de] MMMM [del] YYYY hh:mm A");
 
-const html = `
+        const linkCancelar = `${envs.WEBSERVICE_URL}/cancelar-cita/${token}`;
+
+        const formattedDate = moment(date)
+            .locale('es')  // Establecer el idioma a español
+            .tz("America/Santiago")
+            .format("DD [de] MMMM [del] YYYY hh:mm A");
+
+        const html = `
     <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: center;">
         <div style="background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 100%; max-width: 600px; margin: 0 auto; text-align: left;">
             <h1 style="color: #2a2a2a; font-size: 28px;">Gracias ${name} por confirmar tu asistencia.</h1>
@@ -207,22 +202,14 @@ const html = `
         </div>
     </div>`;
 
-    
-    
-    
-    
-    
-    
-    
-    
         const options = {
             to: email,
             subject: 'Tu cita ha sido confirmada',
             htmlBody: html,
         };
-    
+
         const isSet = await this.emailService.sendEmail(options);
         if (!isSet) throw CustomError.internalServer('Error al enviar el correo de confirmación de cita');
     };
-    
+
 }

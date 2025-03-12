@@ -18,6 +18,8 @@ const clientSchema = new mongoose.Schema({
     email: {
         type: String,
         required: [true, 'El correo es requerido'],
+        match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Por favor ingrese un correo electrónico válido']
+
     },
     dateCita: {
         type: Date,
