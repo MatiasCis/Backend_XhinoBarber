@@ -40,7 +40,7 @@ export class AgendamientoService {
             if (!token) throw CustomError.internalServer('Error al generar el token');
 
             await client.save();
-            await this.sendEmailConfirmationDate(clientDto.email, clientDto.dateCita, clientDto.name);
+            await this.sendEmailConfirmationDate(clientDto.email, clientDto.dateCita, clientDto.name, clientEntity._id);
 
             return { clientEntity, token };
         }
@@ -51,9 +51,9 @@ export class AgendamientoService {
 
 
 
-    private sendEmailConfirmationDate = async (email: string, date: Date, name: string) => {
+    private sendEmailConfirmationDate = async (email: string, date: Date, name: string, id: string) => {
 
-        const token = await JwtAdapter.generateToken({ email });
+        const token = await JwtAdapter.generateToken({ email, id });
         if (!token) throw CustomError.internalServer(`Error al generar el token`);
 
         const link = `${envs.WEBSERVICE_URL}/confirm-state/${token}`;
@@ -126,11 +126,13 @@ export class AgendamientoService {
     public confirmState = async (token: string) => {
 
         const payload = await JwtAdapter.validateToken(token);
+        console.log("Payload del token:", payload); // Inspecciona el payload decodificado
+
         if (!payload) throw CustomError.badRequest('Token invalido');
 
-        const { state } = payload as { state: string };
+        const { id } = payload as { id: string }; // Asegúrate de que el token contenga el ID de la cita
 
-        const client = await ClientModel.findOne({ state });
+        const client = await ClientModel.findById(id);
 
         if (!client) throw CustomError.notFound('Cita no encontrada');
 
