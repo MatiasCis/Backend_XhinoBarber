@@ -253,7 +253,7 @@ export class AgendamientoService {
                     Para ver los detalles de la cita agendada, accede a tu calendario en  
                     <a href="https://xhinobarber.com" style="color: #2a7ae2; text-decoration: none; font-weight: bold;">
                         xhinobarber.com
-                    </a>.
+                    </a>
                 </p>
                     <footer style="color: #aaa; font-size: 12px; margin-top: 40px; text-align: center;">
                     <p>&copy; 2025 XhinoBarber. Todos los derechos reservados.</p>
