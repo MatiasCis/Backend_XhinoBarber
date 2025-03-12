@@ -138,6 +138,7 @@ export class AgendamientoService {
             client.stateCita = 'Confirmado'
             await client.save();
             await this.sendEmailConfirmedAppointment(client.email, client.dateCita, client.name);
+            await this.sendEmailToOwner(client.name, client.dateCita);
             return { message: 'Cita confirmada exitosamente' };
         } else {
             throw CustomError.badRequest('La cita ya está confirmada o tiene otro estado');
@@ -221,5 +222,49 @@ export class AgendamientoService {
         const isSet = await this.emailService.sendEmail(options);
         if (!isSet) throw CustomError.internalServer('Error al enviar el correo de confirmación de cita');
     };
+
+
+    private sendEmailToOwner = async (clientName: string, date: Date) => {
+        const ownerEmail = "XhinoBarber@gmail.com"; // Cambia esto por el correo real del dueño
+        const formattedDate = moment(date)
+            .locale('es')
+            .tz("America/Santiago")
+            .format("DD [de] MMMM [del] YYYY hh:mm A");
+
+        const html = `
+        <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; text-align: center;">
+            <div style="background-color: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 100%; max-width: 600px; margin: 0 auto; text-align: left;">
+                <h1 style="color: #2a2a2a; font-size: 28px;">Nueva Cita Confirmada</h1>
+                <p style="color: #555; font-size: 18px;">Un cliente ha confirmado su cita en XhinoBarber.</p>
+    
+                <hr style="border: 1px solid #ddd; margin: 20px 0;">
+    
+                <p style="color: #333; font-size: 18px;"><strong>👤 Cliente:</strong> ${clientName}</p>
+                <p style="color: #333; font-size: 18px;"><strong>🗓 Fecha:</strong> ${formattedDate}</p>
+    
+                <hr style="border: 1px solid #ddd; margin: 20px 0;">
+                    
+                <p style="color: #555; font-size: 16px; text-align: center;">
+                    Para ver los detalles de la cita agendada, accede a tu calendario en  
+                    <a href="https://xhinobarber.com" style="color: #2a7ae2; text-decoration: none; font-weight: bold;">
+                        xhinobarber.com
+                    </a>.
+                </p>
+                    <footer style="color: #aaa; font-size: 12px; margin-top: 40px; text-align: center;">
+                    <p>&copy; 2025 XhinoBarber. Todos los derechos reservados.</p>
+                </footer>
+            </div>
+        </div>`;
+
+        const options = {
+            to: ownerEmail,
+            subject: 'Nueva Cita Confirmada',
+            htmlBody: html,
+        };
+
+        const isSet = await this.emailService.sendEmail(options);
+        if (!isSet) throw CustomError.internalServer('Error al enviar la notificación al dueño');
+    };
+
 
 }
