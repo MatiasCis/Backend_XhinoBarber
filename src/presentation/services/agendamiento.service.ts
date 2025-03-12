@@ -13,13 +13,16 @@ export class AgendamientoService {
     ) { }
 
     public async agendar(clientDto: ClientDto) {
-        const startOfDay = moment(clientDto.dateCita).startOf('day').toDate();
-        const endOfDay = moment(clientDto.dateCita).endOf('day').toDate();
+        const fechaCita = moment(clientDto.dateCita).tz("America/Santiago", true).startOf('minute'); // Usamos startOf('minute') para eliminar cualquier posible diferencia en segundos
+        const horaCita = fechaCita.format("HH:mm:ss");
 
         const dateExists = await ClientModel.find({
-            dateCita: {
-                $gte: startOfDay,
-                $lte: endOfDay
+            // Compara solo la hora, minutos y segundos
+            $expr: {
+                $eq: [
+                    { $dateToString: { format: "%H:%M:%S", date: "$dateCita" } }, // Formateamos la fecha guardada a hora:minutos:segundos
+                    horaCita
+                ]
             },
             stateCita: { $in: ['Pendiente', 'Confirmado'] } // Filtra solo los estados que bloquean la cita
         });
