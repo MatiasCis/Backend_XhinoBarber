@@ -37,7 +37,7 @@ export class AgendamientoController {
    getEventos = (req: Request, res: Response): void => {
       this.agendamientoService.obtenerEventos()
          .then((eventos) => res.json(eventos))
-         .catch((error) => this.handlerError(error, res));
+         .catch((error: Error) => this.handlerError(error, res));
    }
 
 
