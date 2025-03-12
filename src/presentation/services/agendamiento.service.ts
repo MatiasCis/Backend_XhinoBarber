@@ -13,8 +13,20 @@ export class AgendamientoService {
     ) { }
 
     public async agendar(clientDto: ClientDto) {
-        const dateExists = await ClientModel.findOne({ dateCita: clientDto.dateCita });
-        if (dateExists) throw CustomError.badRequest('La fecha ya está ocupada');
+        const startOfDay = moment(clientDto.dateCita).startOf('day').toDate();
+        const endOfDay = moment(clientDto.dateCita).endOf('day').toDate();
+
+        const dateExists = await ClientModel.find({
+            dateCita: {
+                $gte: startOfDay,
+                $lte: endOfDay
+            },
+            stateCita: { $in: ['Pendiente', 'Confirmado'] } // Filtra solo los estados que bloquean la cita
+        });
+
+        if (dateExists.length > 0) {
+            throw CustomError.badRequest('La fecha ya está ocupada con una cita Pendiente o Confirmada');
+        }
 
         try {
             const fechaCitaUTC = moment(clientDto.dateCita).tz("UTC", true).toDate();
@@ -27,10 +39,7 @@ export class AgendamientoService {
             const token = await JwtAdapter.generateToken({ id: clientEntity._id, state: clientEntity.stateCita });
             if (!token) throw CustomError.internalServer('Error al generar el token');
 
-
-
             await client.save();
-            await ClientModel.updateOne({ dateCita: clientDto.dateCita }, { $set: { stateCita: 'Pendiente' } });
             await this.sendEmailConfirmationDate(clientDto.email, clientDto.dateCita, clientDto.name);
 
             return { clientEntity, token };
@@ -39,6 +48,7 @@ export class AgendamientoService {
             throw CustomError.internalServer(`Error al agendar la cita: ${error}`);
         }
     }
+
 
 
     private sendEmailConfirmationDate = async (email: string, date: Date, name: string) => {
