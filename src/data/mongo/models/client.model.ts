@@ -12,8 +12,11 @@ const clientSchema = new mongoose.Schema({
         required: [true, 'El apellido es requerido'],
     },
     phone: {
-        type: Number,
+        type: String,
         required: [true, 'El telefono es requerido'],
+        minlength: [9, 'El teléfono debe tener exactamente 9 dígitos'],
+        maxlength: [9, 'El teléfono no puede tener más de 10 dígitos']
+
     },
     email: {
         type: String,
